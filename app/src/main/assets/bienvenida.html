@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenida – Alex Aventuras</title>
+<!--
+  Pantalla de bienvenida para la TV de cada casa.
+
+  Datos (en este orden):
+    ?datos=https://…/casa.json   → JSON con los mismos campos que DEMO (abajo)
+    ?nombre=…&casa=…&llegada=AAAA-MM-DD&salida=AAAA-MM-DD&hora=11:00&red=…&clave=…&idioma=es|en
+    ?demo=1                      → datos de ejemplo
+    sin nada                     → bienvenida genérica (sin nombre ni Wi-Fi)
+
+  Los servicios del carrusel están en SERVICIOS (fotos en la carpeta fotos/, videos del sitio).
+-->
+<script src="qrcode.js"></script>
+<style>
+  @font-face { font-family: Inter; src: url(Inter-Regular.otf); font-weight: 400; }
+  @font-face { font-family: Inter; src: url(Inter-SemiBold.otf); font-weight: 600; }
+  @font-face { font-family: Inter; src: url(Inter-Bold.otf); font-weight: 700; }
+  :root {
+    --petroleo: #1F4E5F; --noche: #0D2730; --dorado: #F5B014; --crema: #FFF8EC;
+    --vidrio: rgba(13, 39, 48, .55); --borde: rgba(255, 255, 255, .16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--noche); }
+  body { font-family: Inter, Roboto, "Helvetica Neue", Arial, sans-serif; color: #fff; font-size: 1vw;
+         -webkit-font-smoothing: antialiased; }
+
+  /* ---------- Fondo: foto o video del servicio, a pantalla completa ---------- */
+  .escena { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s ease; overflow: hidden; }
+  .escena.activa { opacity: 1; }
+  .escena img, .escena video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .escena.activa img { animation: acercar 12s ease-out forwards; }
+  @keyframes acercar { from { transform: scale(1.02); } to { transform: scale(1.12); } }
+  .escena video { opacity: 0; transition: opacity 1s; }
+  .escena video.listo { opacity: 1; }
+  .escena.marca { background: radial-gradient(ellipse at 75% 40%, #2D6E80 0, var(--petroleo) 40%, var(--noche) 100%); }
+  .escena.marca .grande { position: absolute; right: 8vw; top: 50%; transform: translateY(-50%); font-size: 18vw; opacity: .9; }
+
+  /* velo para que el texto se lea sobre cualquier foto */
+  .velo { position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(8,28,35,.88) 0%, rgba(8,28,35,.62) 34%, rgba(8,28,35,.08) 62%, rgba(8,28,35,0) 72%),
+      linear-gradient(0deg, rgba(8,28,35,.92) 0%, rgba(8,28,35,.55) 26%, rgba(8,28,35,0) 48%),
+      linear-gradient(180deg, rgba(8,28,35,.55) 0%, rgba(8,28,35,0) 18%); }
+
+  .capa { position: absolute; inset: 0; padding: 3vw 3.4vw 2.6vw; }
+
+  /* ---------- Arriba ---------- */
+  .marcaTop { position: absolute; left: 3.4vw; top: 2.6vw; display: flex; align-items: center; gap: .9vw; }
+  .marcaTop .mark { width: 4.4vw; height: 4.4vw; }
+  .marcaTop .wm { height: 2.9vw; }
+  .reloj { position: absolute; right: 3.4vw; top: 2.6vw; text-align: right; text-shadow: 0 .15vw 1vw rgba(0,0,0,.35); }
+  .reloj .h { font-size: 3.4vw; font-weight: 600; line-height: 1; letter-spacing: -.02em; }
+  .reloj .f { font-size: 1.05vw; font-weight: 600; opacity: .85; margin-top: .4vw; }
+
+  /* ---------- Saludo ---------- */
+  .saludo { position: absolute; left: 3.4vw; top: 11.5vw; width: 52vw; }
+  .saludo .hola { font-size: 1.25vw; font-weight: 700; color: var(--dorado); letter-spacing: .22em; text-transform: uppercase; }
+  .saludo h1 { font-size: 4.6vw; line-height: 1.02; font-weight: 700; letter-spacing: -.03em; margin-top: .8vw;
+               text-shadow: 0 .2vw 1.6vw rgba(0,0,0,.25); }
+  .saludo .casa { margin-top: 1.1vw; font-size: 1.55vw; color: rgba(255,255,255,.88); }
+  .saludo .casa b { color: #fff; font-weight: 600; }
+  .estancia { display: inline-flex; align-items: center; gap: 1.3vw; margin-top: 1.6vw; padding: .9vw 1.4vw;
+              border-radius: 99vw; background: var(--vidrio); border: 1px solid var(--borde); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .estancia div small { display: block; font-size: .72vw; letter-spacing: .16em; text-transform: uppercase; opacity: .7; font-weight: 600; }
+  .estancia div span { display: block; font-size: 1.2vw; font-weight: 600; margin-top: .15vw; }
+  .estancia .flecha { color: var(--dorado); font-size: 1.4vw; }
+
+  /* ---------- Columna derecha ---------- */
+  .der { position: absolute; right: 3.4vw; top: 10.5vw; width: 26.5vw; display: flex; flex-direction: column; gap: 1.1vw; }
+  .tarjeta { border-radius: 1.4vw; padding: 1.5vw 1.6vw; }
+  .clara { background: rgba(255,250,242,.94); color: var(--noche); box-shadow: 0 1.2vw 3vw rgba(0,0,0,.28); }
+  .oscura { background: var(--vidrio); border: 1px solid var(--borde); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  .tarjeta h2 { font-size: .85vw; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; margin-bottom: 1vw; }
+  .clara h2 { color: var(--petroleo); }
+  .oscura h2 { color: var(--dorado); }
+  .wifi { display: flex; gap: 1.3vw; align-items: center; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .wifi .qr { width: 8.4vw; height: 8.4vw; flex: none; }
+  .wifi dt { font-size: .72vw; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: #5C7A83; }
+  .wifi dd { font-size: 1.4vw; font-weight: 700; margin: .1vw 0 .7vw; word-break: break-all; line-height: 1.15; }
+  .wifi p { font-size: .82vw; color: #5C7A83; line-height: 1.35; }
+  ol.pasos { counter-reset: p; list-style: none; }
+  ol.pasos li { counter-increment: p; position: relative; padding-left: 2.1vw; font-size: 1vw; line-height: 1.45; margin-bottom: .5vw; }
+  ol.pasos li::before { content: counter(p); position: absolute; left: 0; top: .1vw; width: 1.4vw; height: 1.4vw; border-radius: 50%;
+                        background: var(--dorado); color: var(--noche); font-size: .78vw; font-weight: 700; display: grid; place-items: center; }
+  .sitio { display: flex; gap: 1.1vw; align-items: center; }
+  .sitio .qr { width: 5vw; height: 5vw; flex: none; background: #fff; border-radius: .5vw; padding: .3vw; }
+  .sitio h2 { margin-bottom: .35vw; }
+  .sitio p { font-size: .9vw; line-height: 1.4; color: rgba(255,255,255,.85); }
+
+  /* ---------- Servicio (abajo) ---------- */
+  .servicio { position: absolute; left: 3.4vw; right: 3.4vw; bottom: 2.6vw; display: flex; align-items: flex-end; gap: 1.8vw; }
+  .servicio .texto { flex: 1; max-width: 50vw; }
+  .antojo { font-size: 1vw; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--dorado); }
+  .antojo i { font-style: normal; color: rgba(255,255,255,.7); font-weight: 600; letter-spacing: .16em; }
+  .servicio h3 { font-size: 3vw; line-height: 1.05; font-weight: 700; letter-spacing: -.02em; margin-top: .6vw; }
+  .servicio p { font-size: 1.25vw; line-height: 1.45; margin-top: .7vw; color: rgba(255,255,255,.86); max-width: 44vw; }
+  .reservar { margin-left: auto; width: 26.5vw; display: flex; align-items: center; gap: 1vw; padding: .8vw; padding-right: 1.5vw; border-radius: 1.2vw;
+              background: rgba(255,250,242,.95); color: var(--noche); box-shadow: 0 1vw 2.4vw rgba(0,0,0,.3); }
+  .reservar .qr { width: 6.6vw; height: 6.6vw; flex: none; }
+  .reservar b { display: block; font-size: 1.1vw; }
+  .reservar span { display: block; font-size: .85vw; color: #5C7A83; margin-top: .25vw; }
+  .cambia { animation: entrar .9s ease both; }
+  @keyframes entrar { from { opacity: 0; transform: translateY(1vw); } to { opacity: 1; transform: none; } }
+
+  .progreso { position: absolute; left: 3.4vw; right: 3.4vw; bottom: 1.2vw; display: flex; gap: .4vw; }
+  .progreso i { flex: 1; height: .22vw; border-radius: 1vw; background: rgba(255,255,255,.22); overflow: hidden; }
+  .progreso i b { display: block; height: 100%; width: 0; background: var(--dorado); }
+  .progreso i.hecho b { width: 100%; }
+  .progreso i.ahora b { animation: llenar linear forwards; }
+  @keyframes llenar { from { width: 0; } to { width: 100%; } }
+
+  .oculto { display: none !important; }
+</style>
+</head>
+<body>
+<div id="escenas"></div>
+<div class="velo"></div>
+
+<div class="capa">
+  <div class="marcaTop"><img class="mark" src="logo-mark.png" alt=""><img class="wm" src="wordmark-white.png" alt="Alex Aventuras"></div>
+  <div class="reloj"><div class="h" id="hora"></div><div class="f" id="fecha"></div></div>
+
+  <div class="saludo">
+    <div class="hola" id="hola"></div>
+    <h1 id="titulo"></h1>
+    <div class="casa" id="casa"></div>
+    <div class="estancia" id="estancia">
+      <div><small id="lblLlegada"></small><span id="llegada"></span></div>
+      <div class="flecha">→</div>
+      <div><small id="lblSalida"></small><span id="salida"></span></div>
+    </div>
+  </div>
+
+  <aside class="der">
+    <div class="tarjeta clara" id="tarjetaWifi">
+      <h2>Wi-Fi</h2>
+      <div class="wifi">
+        <div class="qr" id="qrWifi"></div>
+        <dl><dt id="lblRed"></dt><dd id="red"></dd><dt id="lblClave"></dt><dd id="clave"></dd><p id="txtWifi"></p></dl>
+      </div>
+    </div>
+    <div class="tarjeta oscura oculto" id="tarjetaPasos">
+      <h2 id="lblPasos"></h2>
+      <ol class="pasos" id="pasos"></ol>
+    </div>
+    <div class="tarjeta oscura sitio" id="tarjetaSitio">
+      <div class="qr" id="qrSitio"></div>
+      <div><h2>alexaventuras.com</h2><p id="txtSitio"></p></div>
+    </div>
+  </aside>
+
+  <div class="servicio" id="servicio">
+    <div class="texto" id="servTexto">
+      <div class="antojo"><span id="antojo"></span> <i id="categoria"></i></div>
+      <h3 id="servTitulo"></h3>
+      <p id="servDesc"></p>
+    </div>
+    <div class="reservar" id="servReservar">
+      <div class="qr" id="qrServicio"></div>
+      <div><b id="lblReservar"></b><span id="lblReservar2"></span></div>
+    </div>
+  </div>
+  <div class="progreso" id="progreso"></div>
+</div>
+
+<script>
+(function () {
+  var SITIO = "https://alexaventuras.com";
+
+  // ---------- Textos ----------
+  var T = {
+    es: { hola: "¡Hola!", bienvenidos: "Bienvenidos", llegada: "Llegada", salida: "Salida",
+          red: "Red", clave: "Contraseña", wifiTxt: "Apunta la cámara de tu celular al código para conectarte.",
+          pasos: "Antes de irte", hoySalida: "Hoy es tu salida", antesDe: "hasta las",
+          gracias: "¡Gracias por quedarte con nosotros!", casaPre: "Estás en", disfruta: "Que disfrutes tu estancia.",
+          sitio: "Tu próxima estancia, directo y sin comisiones.",
+          antojo: "¿Se te antoja?", reservar: "Escanea y reserva", reservar2: "Detalles y disponibilidad", locale: "es-MX" },
+    en: { hola: "Hello!", bienvenidos: "Welcome", llegada: "Check-in", salida: "Check-out",
+          red: "Network", clave: "Password", wifiTxt: "Point your phone camera at the code to connect.",
+          pasos: "Before you go", hoySalida: "Today is check-out day", antesDe: "by",
+          gracias: "Thank you for staying with us!", casaPre: "You're staying at", disfruta: "Enjoy your stay.",
+          sitio: "Your next stay, booked direct with $0 fees.",
+          antojo: "In the mood?", reservar: "Scan to book", reservar2: "Details and availability", locale: "en-US" }
+  };
+
+  // ---------- Servicios que se pueden reservar ----------
+  // Textos y fotos tomados de alexaventuras.com (sin precios: se ven en cada página).
+  // foto: incluida en la app (funciona sin internet). video: del sitio, se reproduce en silencio si hay internet.
+  var V = SITIO + "/media/video/";
+  var SERVICIOS = [
+    { pagina: "/rent-a-yacht-in-cancun", foto: "fotos/yate.webp", video: SITIO + "/media/yates.mp4",
+      es: ["Yate privado", "Renta de yates en Cancún", "Explora el Caribe con estilo: capitán, meseros, bebidas y equipo de snorkel incluidos."],
+      en: ["Private yacht", "Yacht rentals in Cancún", "Explore the Caribbean in style: captain, waiters, drinks and snorkel gear included."] },
+    { pagina: "/extreme-adventuring-atv-tour", foto: "fotos/atv.webp", video: V + "extreme-adventuring-atv-tour.mp4",
+      es: ["Aventura", "Cuatrimotos, tirolesas y cenote", "Cuatrimoto en la selva, tirolesas y un clavado en un cenote, con transporte desde un punto de encuentro cercano."],
+      en: ["Adventure", "Extreme ATV, ziplines and cenote", "ATV through the jungle, ziplines and a dip in a cenote, with pickup from a nearby meeting point."] },
+    { pagina: "/private-chef", foto: "fotos/chef.webp", pos: "50% 22%",
+      es: ["En tu villa", "Chef privado", "Cenas, desayunos y celebraciones en la casa. Ingredientes, chef y mesero incluidos."],
+      en: ["At your villa", "Private chef", "Dinners, breakfasts and celebrations at the house. Groceries, chef and waiter included."] },
+    { pagina: "/extreme-snorkel", foto: "fotos/snorkel.webp", video: V + "extreme-snorkel.mp4",
+      es: ["Mar", "Snorkel en el arrecife", "Tortugas, peces y corales en el segundo arrecife más grande del mundo, a 15 minutos de Cancún."],
+      en: ["Sea", "Reef snorkeling", "Turtles, fish and coral on the second-largest reef in the world, 15 minutes from Cancún."] },
+    { pagina: "/catamaran-isla-mujeres", foto: "fotos/catamaran.webp",
+      es: ["Mar", "Catamarán a Isla Mujeres", "Snorkel en el MUSA, beach club con barra libre y buffet, y compras en Isla Mujeres."],
+      en: ["Sea", "Catamaran to Isla Mujeres", "Snorkeling at MUSA, a beach club with open bar and buffet, and shopping on Isla Mujeres."] },
+    { pagina: "/extreme-adventuring-horseback-riding-atv", foto: "fotos/cabalgata.webp", video: V + "extreme-adventuring-horseback-riding-atv.mp4",
+      es: ["Aventura", "Cabalgata + cuatrimotos", "Una cabalgata tranquila por la selva, y después tirolesas, cuatrimoto y cenote."],
+      en: ["Adventure", "Horseback riding + ATV", "A relaxed horseback ride through the jungle, then ziplines, ATVs and a cenote."] },
+    { pagina: "/spa-relaxation-experience", foto: "fotos/spa.webp",
+      es: ["En tu villa", "Spa en la casa", "Masajes y tratamientos de terapeutas calificados, sin salir de tu villa."],
+      en: ["At your villa", "In-villa spa", "Massages and treatments by qualified therapists, without leaving your villa."] },
+    { pagina: "/dolphins-catamaran", foto: "fotos/delfines.webp",
+      es: ["Mar", "Delfines y catamarán", "Nado con delfines en Isla Mujeres y beach club con barra libre y buffet."],
+      en: ["Sea", "Dolphins and catamaran", "Swim with dolphins on Isla Mujeres and enjoy a beach club with open bar and buffet."] },
+    { pagina: "/cenotes-adventuring-tour", foto: "fotos/cenotes.webp", video: V + "cenotes-adventuring-tour.mp4",
+      es: ["Aventura", "Aventura en cenotes", "Cenotes privados con tirolesa, cascadas, columpio y caverna, y degustación de tequila."],
+      en: ["Adventure", "Cenote adventure", "Private cenotes with a zipline, waterfalls, a swing and a cavern, plus a tequila tasting."] },
+    { pagina: "/speed-boat", foto: "fotos/speedboat.webp",
+      es: ["Mar", "Speed Boat", "Maneja tu propia lancha por los manglares de la laguna y haz snorkel en el arrecife."],
+      en: ["Sea", "Speed Boat", "Drive your own boat through the lagoon's mangroves and snorkel on the reef."] },
+    { pagina: "/taco-tour-puerto-morelos", foto: "fotos/tacos.webp", video: V + "taco-tour-puerto-morelos.mp4",
+      es: ["Sabor local", "Taco tour en Puerto Morelos", "Tacos regionales y de pescado frente al mar, paseo por el pueblo y degustación de tequila."],
+      en: ["Local flavor", "Taco tour in Puerto Morelos", "Regional tacos and fish tacos by the sea, a walk through town and a tequila tasting."] }
+  ];
+  var SEGUNDOS_POR_SERVICIO = 10;
+
+  // ---------- Datos de ejemplo (solo con ?demo=1) ----------
+  var DEMO = {
+    nombre: "Familia Ramírez", casa: "Casa de demostración",
+    llegada: hoyMas(-1), salida: hoyMas(3), horaSalida: "11:00",
+    wifi: { red: "Red-de-ejemplo", clave: "clave-de-ejemplo" },
+    pasosSalida: ["Deja las llaves donde las encontraste.", "Apaga el aire acondicionado y las luces.", "Avísanos por WhatsApp al salir."],
+    idioma: "es"
+  };
+
+  var q = new URLSearchParams(location.search);
+  function hoyMas(d) { var x = new Date(); x.setDate(x.getDate() + d); return iso(x); }
+  function iso(x) { return x.getFullYear() + "-" + pad(x.getMonth() + 1) + "-" + pad(x.getDate()); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function $(id) { return document.getElementById(id); }
+  function guardar(d) { try { localStorage.setItem("ultimaReserva", JSON.stringify(d)); } catch (e) {} }
+  function ultima() { try { return JSON.parse(localStorage.getItem("ultimaReserva")); } catch (e) { return null; } }
+
+  function datosDeParametros() {
+    if (!q.get("nombre") && !q.get("casa") && !q.get("red")) return null;
+    return {
+      nombre: q.get("nombre") || "", casa: q.get("casa") || "",
+      llegada: q.get("llegada") || "", salida: q.get("salida") || "", horaSalida: q.get("hora") || "",
+      wifi: q.get("red") ? { red: q.get("red"), clave: q.get("clave") || "" } : null,
+      pasosSalida: q.getAll("paso"), idioma: q.get("idioma") || "es"
+    };
+  }
+
+  function obtener(listo) {
+    var url = q.get("datos");
+    if (url) {
+      fetch(url, { cache: "no-store" })
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (d) { guardar(d); listo(d); })
+        .catch(function () { listo(ultima() || {}); });
+      return;
+    }
+    if (q.get("demo")) return listo(DEMO);
+    listo(datosDeParametros() || {});
+  }
+
+  function fechaCorta(s, loc) {
+    var p = s.split("-"); var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return d.toLocaleDateString(loc, { weekday: "short", day: "numeric", month: "short" });
+  }
+  function qr(texto, el) {
+    var c = qrcode(0, "M"); c.addData(texto); c.make();
+    el.innerHTML = c.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+  }
+  function escWifi(s) { return String(s).replace(/([\\;,:"])/g, "\\$1"); }
+  function nodo(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+
+  function pintar(d) {
+    var en = d.idioma === "en", L = T[en ? "en" : "es"];
+    document.documentElement.lang = en ? "en" : "es";
+    var hoy = iso(new Date()), esSalida = d.salida && hoy === d.salida;
+
+    // Saludo
+    $("hola").textContent = esSalida ? L.hoySalida : L.hola;
+    var titulo = L.bienvenidos;
+    if (esSalida) titulo = d.nombre ? L.gracias.replace("!", ", " + d.nombre + "!") : L.gracias;
+    else if (d.nombre) titulo = L.bienvenidos + ", " + d.nombre;
+    $("titulo").textContent = titulo;
+    var casa = $("casa"); casa.textContent = "";
+    if (d.casa) { casa.appendChild(document.createTextNode(L.casaPre + " ")); casa.appendChild(nodo("b", null, d.casa)); }
+    else casa.textContent = L.disfruta;
+
+    // Estancia
+    $("lblLlegada").textContent = L.llegada; $("lblSalida").textContent = L.salida;
+    if (d.llegada && d.salida) {
+      $("llegada").textContent = fechaCorta(d.llegada, L.locale);
+      $("salida").textContent = fechaCorta(d.salida, L.locale) + (d.horaSalida ? " · " + d.horaSalida : "");
+      $("estancia").classList.remove("oculto");
+    } else $("estancia").classList.add("oculto");
+
+    // Wi-Fi
+    if (d.wifi && d.wifi.red) {
+      $("lblRed").textContent = L.red; $("lblClave").textContent = L.clave; $("txtWifi").textContent = L.wifiTxt;
+      $("red").textContent = d.wifi.red; $("clave").textContent = d.wifi.clave || "—";
+      qr("WIFI:T:" + (d.wifi.clave ? "WPA" : "nopass") + ";S:" + escWifi(d.wifi.red) + ";P:" + escWifi(d.wifi.clave || "") + ";;", $("qrWifi"));
+      $("tarjetaWifi").classList.remove("oculto");
+    } else $("tarjetaWifi").classList.add("oculto");
+
+    // Pasos de salida (solo el día de salida)
+    if (esSalida && d.pasosSalida && d.pasosSalida.length) {
+      $("lblPasos").textContent = L.pasos + (d.horaSalida ? " · " + L.antesDe + " " + d.horaSalida : "");
+      var ol = $("pasos"); ol.innerHTML = "";
+      d.pasosSalida.forEach(function (t) { ol.appendChild(nodo("li", null, t)); });
+      $("tarjetaPasos").classList.remove("oculto");
+      $("tarjetaSitio").classList.add("oculto");     // el día de salida, los pasos ocupan su lugar
+    } else { $("tarjetaPasos").classList.add("oculto"); $("tarjetaSitio").classList.remove("oculto"); }
+
+    // Sitio
+    $("txtSitio").textContent = L.sitio;
+    qr(en ? SITIO + "/en" : SITIO, $("qrSitio"));
+
+    $("antojo").textContent = L.antojo;
+    $("lblReservar").textContent = L.reservar;
+    $("lblReservar2").textContent = L.reservar2;
+
+    reloj(L.locale);
+    carrusel(d.servicios || SERVICIOS, en);
+  }
+
+  // ---------- Carrusel a pantalla completa ----------
+  function carrusel(lista, en) {
+    var caja = $("escenas"), barra = $("progreso");
+    caja.innerHTML = ""; barra.innerHTML = "";
+    var escenas = lista.map(function (s) {
+      var e = nodo("div", "escena");
+      if (s.foto) { var img = nodo("img"); img.alt = ""; img.src = s.foto; if (s.pos) img.style.objectPosition = s.pos; e.appendChild(img); }
+      else { e.classList.add("marca"); e.appendChild(nodo("div", "grande", s.icono || "✨")); }
+      e._s = s;
+      caja.appendChild(e);
+      var seg = nodo("i"); seg.appendChild(nodo("b")); barra.appendChild(seg);
+      return e;
+    });
+    var i = q.has("servicio") ? +q.get("servicio") % escenas.length : Math.floor(Math.random() * escenas.length);
+
+    function mostrar() {
+      escenas.forEach(function (e, k) {
+        var activa = k === i;
+        e.classList.toggle("activa", activa);
+        var seg = barra.children[k];
+        seg.className = k < i ? "hecho" : (activa ? "ahora" : "");
+        if (activa) seg.firstChild.style.animationDuration = SEGUNDOS_POR_SERVICIO + "s";
+        var v = e.querySelector("video");
+        if (activa && e._s.video && navigator.onLine !== false) {
+          if (!v) {   // el video se pide solo cuando le toca, y queda en caché
+            v = nodo("video"); v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto";
+            v.setAttribute("muted", ""); v.src = e._s.video;
+            v.addEventListener("playing", function () { v.classList.add("listo"); });
+            v.addEventListener("error", function () { v.remove(); });
+            e.appendChild(v);
+          }
+          try { v.currentTime = 0; } catch (x) {}
+          var p = v.play(); if (p && p.catch) p.catch(function () {});
+        } else if (v) { v.pause(); }
+      });
+
+      var s = escenas[i]._s, tx = s[en ? "en" : "es"] || s.es;
+      $("categoria").textContent = "· " + tx[0];
+      $("servTitulo").textContent = tx[1];
+      $("servDesc").textContent = tx[2];
+      var ruta = s.pagina || s.url || "";
+      qr(/^https?:/.test(ruta) ? ruta : SITIO + (en ? "/en" : "") + ruta, $("qrServicio"));
+      ["servTexto", "servReservar"].forEach(function (id) {
+        var el = $(id); el.classList.remove("cambia"); void el.offsetWidth; el.classList.add("cambia");
+      });
+      i = (i + 1) % escenas.length;
+    }
+    mostrar(); clearInterval(carrusel._t); carrusel._t = setInterval(mostrar, SEGUNDOS_POR_SERVICIO * 1000);
+  }
+
+  function reloj(loc) {
+    function t() {
+      var n = new Date();
+      $("hora").textContent = n.toLocaleTimeString(loc, { hour: "numeric", minute: "2-digit" });
+      var f = n.toLocaleDateString(loc, { weekday: "long", day: "numeric", month: "long" });
+      $("fecha").textContent = f.charAt(0).toUpperCase() + f.slice(1);
+    }
+    t(); clearInterval(reloj._i); reloj._i = setInterval(t, 15000);
+  }
+
+  obtener(pintar);
+})();
+</script>
+</body>
+</html>
