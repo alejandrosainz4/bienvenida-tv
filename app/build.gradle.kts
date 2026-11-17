@@ -11,15 +11,25 @@ android {
         applicationId = "com.alexaventuras.bienvenida"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
+    }
+
+    // Siempre la misma firma: así cada versión nueva se instala encima de la anterior y la tele conserva su
+    // configuración. Es una app que se instala directo (no Play Store); la firma solo sirve para eso.
+    signingConfigs {
+        create("bienvenida") {
+            storeFile = file("firma-bienvenida.jks")
+            storePassword = "bienvenida-tv"
+            keyAlias = "bienvenida"
+            keyPassword = "bienvenida-tv"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Firmado con la llave de depuración para poder instalarlo directo (sideload).
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("bienvenida")
         }
     }
 

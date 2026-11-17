@@ -34,6 +34,15 @@ También se puede abrir en Android Studio y usar *Build → Build APK*.
    4. (Opcional) Elegirla también como **protector de pantalla**.
 5. Apaga y prende la tele para probar.
 
+## Actualizar la app
+
+En Downloader escribe otra vez **6188566** e instala: se instala encima y la tele conserva su configuración.
+Única excepción: quien instaló la primera versión (17-nov-2026, antes de la firma fija) debe **desinstalarla una vez**
+(Ajustes → Apps → Bienvenida Alex Aventuras → Desinstalar), instalar la nueva y volver a configurarla.
+
+La firma (`app/firma-bienvenida.jks`) está en el repositorio a propósito, por decisión de Alex: es una app que se
+instala directo en las teles de las casas, y una "actualización" ajena solo se podría instalar con la tele en la mano.
+
 Para volver a la configuración: con la bienvenida en pantalla presiona **ARRIBA 5 veces seguidas**.
 
 ### Si la tele no muestra el permiso "Mostrar sobre otras apps"
