@@ -25,7 +25,7 @@ También se puede abrir en Android Studio y usar *Build → Build APK*.
 
 1. **Activar instalación de apps externas:** Ajustes → Sistema → Acerca de → presiona 7 veces "Compilación del SO de Android TV" (activa modo desarrollador).
 2. Instala la app **Downloader** desde Google Play, y en Ajustes → Apps → Seguridad permite que Downloader instale apps desconocidas.
-3. En Downloader escribe la dirección del APK, descarga e instala.
+3. En Downloader escribe el código **6188566** (o la dirección `aftv.news/6188566`), descarga e instala. El código siempre baja la versión más reciente.
 4. Abre **Bienvenida Alex Aventuras**. La primera vez aparece la configuración:
    1. **Permiso "Mostrar sobre otras apps":** pulsa el botón y actívalo. Sin esto Android no deja que se abra sola.
    2. **Datos de la casa:** nombre de la casa, red Wi-Fi, contraseña e idioma.
