@@ -10,10 +10,11 @@
   Datos (en este orden):
     ?datos=https://…/casa.json   → JSON con los mismos campos que DEMO (abajo)
     ?nombre=…&casa=…&llegada=AAAA-MM-DD&salida=AAAA-MM-DD&hora=11:00&red=…&clave=…&idioma=es|en
+    &codigo=ABCD2345             → nombre y fechas del huésped de hoy, desde Hospitable (vía alexaventuras.com/api/tv)
     ?demo=1                      → datos de ejemplo
     sin nada                     → bienvenida genérica (sin nombre ni Wi-Fi)
 
-  Los servicios del carrusel están en SERVICIOS (fotos en la carpeta fotos/, videos del sitio).
+  Carrusel: se pide a alexaventuras.com/api/tv/servicios (cambia solo con el sitio). SERVICIOS es el respaldo sin internet.
 -->
 <script src="qrcode.js"></script>
 <style>
@@ -206,24 +207,15 @@
     { pagina: "/extreme-snorkel", foto: "fotos/snorkel.webp", video: V + "extreme-snorkel.mp4",
       es: ["Mar", "Snorkel en el arrecife", "Tortugas, peces y corales en el segundo arrecife más grande del mundo, a 15 minutos de Cancún."],
       en: ["Sea", "Reef snorkeling", "Turtles, fish and coral on the second-largest reef in the world, 15 minutes from Cancún."] },
-    { pagina: "/catamaran-isla-mujeres", foto: "fotos/catamaran.webp",
-      es: ["Mar", "Catamarán a Isla Mujeres", "Snorkel en el MUSA, beach club con barra libre y buffet, y compras en Isla Mujeres."],
-      en: ["Sea", "Catamaran to Isla Mujeres", "Snorkeling at MUSA, a beach club with open bar and buffet, and shopping on Isla Mujeres."] },
     { pagina: "/extreme-adventuring-horseback-riding-atv", foto: "fotos/cabalgata.webp", video: V + "extreme-adventuring-horseback-riding-atv.mp4",
       es: ["Aventura", "Cabalgata + cuatrimotos", "Una cabalgata tranquila por la selva, y después tirolesas, cuatrimoto y cenote."],
       en: ["Adventure", "Horseback riding + ATV", "A relaxed horseback ride through the jungle, then ziplines, ATVs and a cenote."] },
     { pagina: "/spa-relaxation-experience", foto: "fotos/spa.webp",
       es: ["En tu villa", "Spa en la casa", "Masajes y tratamientos de terapeutas calificados, sin salir de tu villa."],
       en: ["At your villa", "In-villa spa", "Massages and treatments by qualified therapists, without leaving your villa."] },
-    { pagina: "/dolphins-catamaran", foto: "fotos/delfines.webp",
-      es: ["Mar", "Delfines y catamarán", "Nado con delfines en Isla Mujeres y beach club con barra libre y buffet."],
-      en: ["Sea", "Dolphins and catamaran", "Swim with dolphins on Isla Mujeres and enjoy a beach club with open bar and buffet."] },
     { pagina: "/cenotes-adventuring-tour", foto: "fotos/cenotes.webp", video: V + "cenotes-adventuring-tour.mp4",
       es: ["Aventura", "Aventura en cenotes", "Cenotes privados con tirolesa, cascadas, columpio y caverna, y degustación de tequila."],
       en: ["Adventure", "Cenote adventure", "Private cenotes with a zipline, waterfalls, a swing and a cavern, plus a tequila tasting."] },
-    { pagina: "/speed-boat", foto: "fotos/speedboat.webp",
-      es: ["Mar", "Speed Boat", "Maneja tu propia lancha por los manglares de la laguna y haz snorkel en el arrecife."],
-      en: ["Sea", "Speed Boat", "Drive your own boat through the lagoon's mangroves and snorkel on the reef."] },
     { pagina: "/taco-tour-puerto-morelos", foto: "fotos/tacos.webp", video: V + "taco-tour-puerto-morelos.mp4",
       es: ["Sabor local", "Taco tour en Puerto Morelos", "Tacos regionales y de pescado frente al mar, paseo por el pueblo y degustación de tequila."],
       en: ["Local flavor", "Taco tour in Puerto Morelos", "Regional tacos and fish tacos by the sea, a walk through town and a tequila tasting."] }
@@ -257,17 +249,55 @@
     };
   }
 
-  function obtener(listo) {
-    var url = q.get("datos");
-    if (url) {
+  function leer(clave) { try { return JSON.parse(localStorage.getItem(clave)); } catch (e) { return null; } }
+  function escribir(clave, v) { try { localStorage.setItem(clave, JSON.stringify(v)); } catch (e) {} }
+
+  /** fetch con tiempo límite: la tele no espera más de 8 s para pintar. */
+  function pedir(url) {
+    return new Promise(function (ok, mal) {
+      var t = setTimeout(function () { mal(new Error("tiempo")); }, 8000);
       fetch(url, { cache: "no-store" })
-        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-        .then(function (d) { guardar(d); listo(d); })
-        .catch(function () { listo(ultima() || {}); });
-      return;
-    }
-    if (q.get("demo")) return listo(DEMO);
-    listo(datosDeParametros() || {});
+        .then(function (r) { clearTimeout(t); if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+        .then(ok, mal);
+    });
+  }
+
+  /** Huésped de hoy desde Hospitable (a través del sitio), con el código de la casa. */
+  function huesped(codigo) {
+    if (!codigo) return Promise.resolve(null);
+    var clave = "huesped:" + codigo.toUpperCase();
+    return pedir(SITIO + "/api/tv/" + encodeURIComponent(codigo))
+      .then(function (h) { escribir(clave, h); return h; })
+      .catch(function () {
+        var h = leer(clave);   // sin internet: lo último recibido, mientras su estancia no haya terminado
+        return h && h.salida && h.salida >= iso(new Date()) ? h : null;
+      });
+  }
+
+  /** Servicios del carrusel desde el sitio; si falla, la última copia; si no hay, los que trae la app. */
+  function servicios() {
+    return pedir(SITIO + "/api/tv/servicios")
+      .then(function (r) { if (!r.servicios || !r.servicios.length) throw 0; escribir("servicios", r.servicios); return r.servicios; })
+      .catch(function () { var c = leer("servicios"); return c && c.length ? c : SERVICIOS; });
+  }
+
+  function obtener(listo) {
+    var base;
+    var url = q.get("datos");
+    if (url) base = pedir(url).then(function (d) { guardar(d); return d; }).catch(function () { return ultima() || {}; });
+    else if (q.get("demo")) base = Promise.resolve(DEMO);
+    else base = Promise.resolve(datosDeParametros() || {});
+
+    Promise.all([base, huesped(q.get("codigo")), q.get("demo") ? Promise.resolve(SERVICIOS) : servicios()]).then(function (r) {
+      var d = r[0], h = r[1];
+      if (h && h.nombre) {
+        d.nombre = h.nombre; d.llegada = h.llegada; d.salida = h.salida;
+        if (h.horaSalida) d.horaSalida = h.horaSalida;
+        if (h.idioma) d.idioma = h.idioma;   // el idioma del huésped manda sobre el de la tele
+      }
+      if (!d.servicios) d.servicios = r[2];
+      listo(d);
+    });
   }
 
   function fechaCorta(s, loc) {

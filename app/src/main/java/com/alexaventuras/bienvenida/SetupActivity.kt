@@ -26,6 +26,7 @@ class SetupActivity : Activity() {
     private lateinit var campoCasa: EditText
     private lateinit var campoRed: EditText
     private lateinit var campoClave: EditText
+    private lateinit var campoCodigo: EditText
     private var ingles = false
 
     private fun textoIdioma() = if (ingles) "Idioma de la pantalla: English (cambiar)" else "Idioma de la pantalla: Español (cambiar)"
@@ -61,6 +62,11 @@ class SetupActivity : Activity() {
         col.addView(campoCasa, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         col.addView(campoRed, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         col.addView(campoClave, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        col.addView(texto("Código de la casa (opcional): está en el panel de alexaventuras.com → Teles de bienvenida. Con él, la tele saluda al huésped por su nombre.", 16f, false, arriba = 12))
+        campoCodigo = campo("Código de 8 letras (ej. ABCD-2345)", Ajustes.texto(this, "codigo")).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+        }
+        col.addView(campoCodigo, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         ingles = Ajustes.texto(this, "idioma") == "en"
         val botonIdioma = boton(textoIdioma()) {}
         botonIdioma.setOnClickListener { ingles = !ingles; botonIdioma.text = textoIdioma() }
@@ -124,6 +130,7 @@ class SetupActivity : Activity() {
         Ajustes.guardarTexto(this, "casa", campoCasa.text.toString())
         Ajustes.guardarTexto(this, "red", campoRed.text.toString())
         Ajustes.guardarTexto(this, "clave", campoClave.text.toString())
+        Ajustes.guardarTexto(this, "codigo", campoCodigo.text.toString().uppercase().replace(Regex("[^A-Z0-9]"), ""))
         Ajustes.guardarTexto(this, "idioma", if (ingles) "en" else "es")
         Ajustes.guardarMinutos(this, campoMinutos.text.toString().toIntOrNull() ?: 30)
         Ajustes.marcarConfigurado(this)

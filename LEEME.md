@@ -28,7 +28,8 @@ También se puede abrir en Android Studio y usar *Build → Build APK*.
 3. En Downloader escribe el código **6188566** (o la dirección `aftv.news/6188566`), descarga e instala. El código siempre baja la versión más reciente.
 4. Abre **Bienvenida Alex Aventuras**. La primera vez aparece la configuración:
    1. **Permiso "Mostrar sobre otras apps":** pulsa el botón y actívalo. Sin esto Android no deja que se abra sola.
-   2. **Datos de la casa:** nombre de la casa, red Wi-Fi, contraseña e idioma.
+   2. **Datos de la casa:** nombre de la casa, red Wi-Fi, contraseña e idioma. Opcional: el **código de la casa**
+      (panel de alexaventuras.com → Teles de bienvenida) para que salude al huésped por su nombre.
    3. **Minutos visibles:** cuánto tiempo mantiene la tele encendida (30 por defecto). Después, la tele hace su reposo normal.
    4. (Opcional) Elegirla también como **protector de pantalla**.
 5. Apaga y prende la tele para probar.
@@ -57,7 +58,18 @@ En teles TCL / iFFALCON, además, permite el "inicio automático" de la app en s
 | `SetupActivity` | Configuración. |
 | `assets/bienvenida.html` | El diseño de la pantalla. Funciona sin internet, salvo las fotos. |
 
+## Nombre del huésped
+
+Con el código de la casa, la tele pregunta a `alexaventuras.com/api/tv/<código>` quién está hospedado hoy (Hospitable)
+y muestra su primer nombre, sus fechas y la pantalla en su idioma. El día de cambio, hasta las 13:00 despide al que se
+va y después saluda al que llega.
+
 ## Cambiar los servicios del carrusel
+
+Se cambian en el sitio, no en la tele: la tele pide la lista a `alexaventuras.com/api/tv/servicios`, que sale de los
+tours y servicios publicados. Si se oculta un tour en el sitio, desaparece de la tele. La lista de abajo es solo el
+respaldo para cuando no hay internet.
+
 
 En `app/src/main/assets/bienvenida.html`, lista `SERVICIOS`. Cada uno tiene textos en español e inglés, su página en alexaventuras.com (a donde lleva el QR), una foto (en `assets/fotos/`, tomada del sitio) y, si existe, un video del sitio que se reproduce sin sonido cuando hay internet. Sin internet se ve la foto.
 
