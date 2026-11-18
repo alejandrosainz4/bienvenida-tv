@@ -28,7 +28,8 @@ También se puede abrir en Android Studio y usar *Build → Build APK*.
 3. En Downloader escribe el código **6188566** (o la dirección `aftv.news/6188566`), descarga e instala. El código siempre baja la versión más reciente.
 4. Abre **Bienvenida Alex Aventuras**. La primera vez aparece la configuración:
    1. **Permiso "Mostrar sobre otras apps":** pulsa el botón y actívalo. Sin esto Android no deja que se abra sola.
-   2. **Datos de la casa:** nombre de la casa, red Wi-Fi, contraseña e idioma. Opcional: el **código de la casa**
+   2. **Datos de la casa:** nombre de la casa, red Wi-Fi, contraseña e idioma (Español, English o Automático = el
+      idioma del huésped según Hospitable, que a veces lo marca mal). Opcional: el **código de la casa**
       (panel de alexaventuras.com → Teles de bienvenida) para que salude al huésped por su nombre.
    3. **Minutos visibles:** cuánto tiempo mantiene la tele encendida (30 por defecto). Después, la tele hace su reposo normal.
    4. (Opcional) Elegirla también como **protector de pantalla**.

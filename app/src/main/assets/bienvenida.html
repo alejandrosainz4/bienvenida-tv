@@ -298,7 +298,8 @@
   function huesped(codigo) {
     if (!codigo) return Promise.resolve(null);
     var clave = "huesped:" + codigo.toUpperCase();
-    return pedir(SITIO + "/api/tv/" + encodeURIComponent(codigo))
+    // Solo con el idioma en "Automático" se pide el idioma del huésped (Hospitable a veces lo marca mal).
+    return pedir(SITIO + "/api/tv/" + encodeURIComponent(codigo) + (q.get("idioma") === "auto" ? "?idioma=huesped" : ""))
       .then(function (h) { escribir(clave, h); return h; })
       .catch(function () {
         var h = leer(clave);   // sin internet: lo último recibido (el nombre, solo mientras su estancia no haya terminado)
@@ -330,7 +331,7 @@
       if (h && h.nombre) {
         d.nombre = h.nombre; d.llegada = h.llegada; d.salida = h.salida;
         if (h.horaSalida) d.horaSalida = h.horaSalida;
-        if (h.idioma) d.idioma = h.idioma;   // el idioma del huésped manda sobre el de la tele
+        if (h.idioma && q.get("idioma") === "auto") d.idioma = h.idioma;   // solo en "Automático"
       }
       if (destino) d.destino = destino;
       else if (!d.servicios) d.servicios = r[2];

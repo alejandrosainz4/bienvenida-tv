@@ -27,13 +27,17 @@ class SetupActivity : Activity() {
     private lateinit var campoRed: EditText
     private lateinit var campoClave: EditText
     private lateinit var campoCodigo: EditText
-    private var ingles = false
+    private var idioma = "es"
     private var destino = ""
 
     /** Destinos: "" = Cancún (Alex Aventuras), "tupungato" = Tupungato (Volcano). */
     private fun textoDestino() = if (destino == "tupungato") "Destino: Tupungato – Volcano (cambiar)" else "Destino: Cancún – Alex Aventuras (cambiar)"
 
-    private fun textoIdioma() = if (ingles) "Idioma de la pantalla: English (cambiar)" else "Idioma de la pantalla: Español (cambiar)"
+    private fun textoIdioma() = when (idioma) {
+        "en" -> "Idioma de la pantalla: English (cambiar)"
+        "auto" -> "Idioma de la pantalla: Automático, el del huésped (cambiar)"
+        else -> "Idioma de la pantalla: Español (cambiar)"
+    }
 
     private fun campo(pista: String, valor: String) = EditText(this).apply {
         setText(valor)
@@ -71,9 +75,12 @@ class SetupActivity : Activity() {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
         }
         col.addView(campoCodigo, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
-        ingles = Ajustes.texto(this, "idioma") == "en"
+        idioma = Ajustes.texto(this, "idioma").ifBlank { "es" }
         val botonIdioma = boton(textoIdioma()) {}
-        botonIdioma.setOnClickListener { ingles = !ingles; botonIdioma.text = textoIdioma() }
+        botonIdioma.setOnClickListener {
+            idioma = when (idioma) { "es" -> "en"; "en" -> "auto"; else -> "es" }
+            botonIdioma.text = textoIdioma()
+        }
         col.addView(botonIdioma)
         destino = Ajustes.texto(this, "destino")
         val botonDestino = boton(textoDestino()) {}
@@ -139,7 +146,7 @@ class SetupActivity : Activity() {
         Ajustes.guardarTexto(this, "red", campoRed.text.toString())
         Ajustes.guardarTexto(this, "clave", campoClave.text.toString())
         Ajustes.guardarTexto(this, "codigo", campoCodigo.text.toString().uppercase().replace(Regex("[^A-Z0-9]"), ""))
-        Ajustes.guardarTexto(this, "idioma", if (ingles) "en" else "es")
+        Ajustes.guardarTexto(this, "idioma", idioma)
         Ajustes.guardarTexto(this, "destino", destino)
         Ajustes.guardarMinutos(this, campoMinutos.text.toString().toIntOrNull() ?: 30)
         Ajustes.marcarConfigurado(this)
