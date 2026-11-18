@@ -301,8 +301,10 @@
     return pedir(SITIO + "/api/tv/" + encodeURIComponent(codigo))
       .then(function (h) { escribir(clave, h); return h; })
       .catch(function () {
-        var h = leer(clave);   // sin internet: lo último recibido, mientras su estancia no haya terminado
-        return h && h.salida && h.salida >= iso(new Date()) ? h : null;
+        var h = leer(clave);   // sin internet: lo último recibido (el nombre, solo mientras su estancia no haya terminado)
+        if (!h) return null;
+        if (!h.salida || h.salida < iso(new Date())) return h.destino ? { destino: h.destino } : null;
+        return h;
       });
   }
 
@@ -320,9 +322,11 @@
     else if (q.get("demo")) base = Promise.resolve(DEMO);
     else base = Promise.resolve(datosDeParametros() || {});
 
-    var destino = DESTINOS[q.get("destino")];
-    Promise.all([base, huesped(q.get("codigo")), (q.get("demo") || destino) ? Promise.resolve(SERVICIOS) : servicios()]).then(function (r) {
+    var elegido = q.get("destino");
+    Promise.all([base, huesped(q.get("codigo")), (q.get("demo") || DESTINOS[elegido]) ? Promise.resolve(SERVICIOS) : servicios()]).then(function (r) {
       var d = r[0], h = r[1];
+      // El código de la casa también dice su destino (p. ej. Tupungato → Volcano), aunque la tele no lo tenga elegido.
+      var destino = DESTINOS[elegido] || (h && DESTINOS[h.destino]);
       if (h && h.nombre) {
         d.nombre = h.nombre; d.llegada = h.llegada; d.salida = h.salida;
         if (h.horaSalida) d.horaSalida = h.horaSalida;
