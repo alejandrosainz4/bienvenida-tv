@@ -22,12 +22,14 @@ object Ajustes {
         val avanzada = urlGuardada(c)
         if (avanzada.isNotBlank()) return avanzada
         val casa = texto(c, "casa"); val red = texto(c, "red"); val clave = texto(c, "clave"); val codigo = texto(c, "codigo")
-        if (casa.isBlank() && red.isBlank() && codigo.isBlank()) return DEMO_URL
+        if (casa.isBlank() && red.isBlank() && codigo.isBlank() && texto(c, "destino").isBlank()) return DEMO_URL
         val b = android.net.Uri.parse(GENERICA_URL).buildUpon()
         if (casa.isNotBlank()) b.appendQueryParameter("casa", casa)
         if (red.isNotBlank()) b.appendQueryParameter("red", red)
         if (clave.isNotBlank()) b.appendQueryParameter("clave", clave)
         if (codigo.isNotBlank()) b.appendQueryParameter("codigo", codigo)
+        val destino = texto(c, "destino")
+        if (destino.isNotBlank()) b.appendQueryParameter("destino", destino)
         b.appendQueryParameter("idioma", texto(c, "idioma").ifBlank { "es" })
         return b.build().toString()
     }

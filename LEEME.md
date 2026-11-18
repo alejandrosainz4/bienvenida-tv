@@ -67,6 +67,15 @@ En teles TCL / iFFALCON, además, permite el "inicio automático" de la app en s
 | `SetupActivity` | Configuración. |
 | `assets/bienvenida.html` | El diseño de la pantalla. Funciona sin internet, salvo las fotos. |
 
+## Destinos
+
+En la configuración, el botón **Destino** elige la marca de la pantalla:
+
+- **Cancún – Alex Aventuras** (por defecto): carrusel de servicios desde alexaventuras.com y QR al sitio.
+- **Tupungato – Volcano**: logo y colores de Volcano, foto de Tupungato de fondo y QR al WhatsApp de Daiana
+  (+54 9 2622 58-7853) para reservar tours y alojamiento. Sin QR a alexaventuras.com. Se configura en `DESTINOS`
+  dentro de `bienvenida.html`.
+
 ## Nombre del huésped
 
 Con el código de la casa, la tele pregunta a `alexaventuras.com/api/tv/<código>` quién está hospedado hoy (Hospitable)

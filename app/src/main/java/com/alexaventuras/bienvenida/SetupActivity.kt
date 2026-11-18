@@ -28,6 +28,10 @@ class SetupActivity : Activity() {
     private lateinit var campoClave: EditText
     private lateinit var campoCodigo: EditText
     private var ingles = false
+    private var destino = ""
+
+    /** Destinos: "" = Cancún (Alex Aventuras), "tupungato" = Tupungato (Volcano). */
+    private fun textoDestino() = if (destino == "tupungato") "Destino: Tupungato – Volcano (cambiar)" else "Destino: Cancún – Alex Aventuras (cambiar)"
 
     private fun textoIdioma() = if (ingles) "Idioma de la pantalla: English (cambiar)" else "Idioma de la pantalla: Español (cambiar)"
 
@@ -71,6 +75,10 @@ class SetupActivity : Activity() {
         val botonIdioma = boton(textoIdioma()) {}
         botonIdioma.setOnClickListener { ingles = !ingles; botonIdioma.text = textoIdioma() }
         col.addView(botonIdioma)
+        destino = Ajustes.texto(this, "destino")
+        val botonDestino = boton(textoDestino()) {}
+        botonDestino.setOnClickListener { destino = if (destino == "tupungato") "" else "tupungato"; botonDestino.text = textoDestino() }
+        col.addView(botonDestino)
 
         col.addView(texto("Avanzado: dirección de una página en internet (déjala vacía para usar los datos de arriba)", 16f, false, arriba = 16))
         campoUrl = campo("https://…", Ajustes.urlGuardada(this)).apply { inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI }
@@ -132,6 +140,7 @@ class SetupActivity : Activity() {
         Ajustes.guardarTexto(this, "clave", campoClave.text.toString())
         Ajustes.guardarTexto(this, "codigo", campoCodigo.text.toString().uppercase().replace(Regex("[^A-Z0-9]"), ""))
         Ajustes.guardarTexto(this, "idioma", if (ingles) "en" else "es")
+        Ajustes.guardarTexto(this, "destino", destino)
         Ajustes.guardarMinutos(this, campoMinutos.text.toString().toIntOrNull() ?: 30)
         Ajustes.marcarConfigurado(this)
         WakeService.iniciar(this)

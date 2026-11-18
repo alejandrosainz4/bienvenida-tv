@@ -116,6 +116,17 @@
   .progreso i.ahora b { animation: llenar linear forwards; }
   @keyframes llenar { from { width: 0; } to { width: 100%; } }
 
+  /* ---------- Marca Volcano (Tupungato) ---------- */
+  body.volcano { --dorado: #B89C78; --noche: #292834; --petroleo: #67463F; --vidrio: rgba(41,40,52,.55); }
+  body.volcano .velo { background:
+      linear-gradient(90deg, rgba(28,27,36,.86) 0%, rgba(28,27,36,.55) 34%, rgba(28,27,36,.05) 62%, rgba(28,27,36,0) 72%),
+      linear-gradient(0deg, rgba(28,27,36,.9) 0%, rgba(28,27,36,.5) 26%, rgba(28,27,36,0) 48%),
+      linear-gradient(180deg, rgba(28,27,36,.55) 0%, rgba(28,27,36,0) 20%); }
+  body.volcano .marcaTop .volcanoLogo { height: 6.4vw; width: auto; }
+  body.volcano .clara { background: rgba(247,243,237,.95); }
+  body.volcano .clara h2 { color: #67463F; }
+  body.volcano .wifi dt, body.volcano .wifi p, body.volcano .reservar span { color: #7A6C62; }
+
   .oculto { display: none !important; }
 </style>
 </head>
@@ -124,7 +135,7 @@
 <div class="velo"></div>
 
 <div class="capa">
-  <div class="marcaTop"><img class="mark" src="logo-mark.png" alt=""><img class="wm" src="wordmark-white.png" alt="Alex Aventuras"></div>
+  <div class="marcaTop" id="marcaTop"><img class="mark" src="logo-mark.png" alt=""><img class="wm" src="wordmark-white.png" alt="Alex Aventuras"></div>
   <div class="reloj"><div class="h" id="hora"></div><div class="f" id="fecha"></div></div>
 
   <div class="saludo">
@@ -222,6 +233,27 @@
   ];
   var SEGUNDOS_POR_SERVICIO = 10;
 
+  // ---------- Destinos (cada tele elige el suyo en la configuración) ----------
+  var WA_DAIANA = "5492622587853";
+  var DESTINOS = {
+    tupungato: {
+      marca: "volcano",
+      antojo: { es: "Reservas", en: "Bookings" },
+      reservar: { es: ["Escanea y escribe", "WhatsApp de Daiana"], en: ["Scan to chat", "Daiana on WhatsApp"] },
+      sinSitio: true,
+      servicios: function (casa, en) {
+        var msg = en ? "Hi Daiana, I'm staying at " + (casa || "Volcano") + " and I'd like information about tours and bookings."
+                     : "Hola Daiana, me estoy quedando en " + (casa || "Volcano") + " y quiero información sobre tours y reservas.";
+        return [{
+          foto: "fotos/tupungato.jpg",
+          pagina: "https://wa.me/" + WA_DAIANA + "?text=" + encodeURIComponent(msg),
+          es: ["Daiana", "Tours y alojamiento en Tupungato", "Escanea el código y escríbele a Daiana por WhatsApp para reservar tours o tu próxima estancia."],
+          en: ["Daiana", "Tours and stays in Tupungato", "Scan the code to message Daiana on WhatsApp and book tours or your next stay."]
+        }];
+      }
+    }
+  };
+
   // ---------- Datos de ejemplo (solo con ?demo=1) ----------
   var DEMO = {
     nombre: "Familia Ramírez", casa: "Casa de demostración",
@@ -288,14 +320,16 @@
     else if (q.get("demo")) base = Promise.resolve(DEMO);
     else base = Promise.resolve(datosDeParametros() || {});
 
-    Promise.all([base, huesped(q.get("codigo")), q.get("demo") ? Promise.resolve(SERVICIOS) : servicios()]).then(function (r) {
+    var destino = DESTINOS[q.get("destino")];
+    Promise.all([base, huesped(q.get("codigo")), (q.get("demo") || destino) ? Promise.resolve(SERVICIOS) : servicios()]).then(function (r) {
       var d = r[0], h = r[1];
       if (h && h.nombre) {
         d.nombre = h.nombre; d.llegada = h.llegada; d.salida = h.salida;
         if (h.horaSalida) d.horaSalida = h.horaSalida;
         if (h.idioma) d.idioma = h.idioma;   // el idioma del huésped manda sobre el de la tele
       }
-      if (!d.servicios) d.servicios = r[2];
+      if (destino) d.destino = destino;
+      else if (!d.servicios) d.servicios = r[2];
       listo(d);
     });
   }
@@ -349,7 +383,7 @@
       d.pasosSalida.forEach(function (t) { ol.appendChild(nodo("li", null, t)); });
       $("tarjetaPasos").classList.remove("oculto");
       $("tarjetaSitio").classList.add("oculto");     // el día de salida, los pasos ocupan su lugar
-    } else { $("tarjetaPasos").classList.add("oculto"); $("tarjetaSitio").classList.remove("oculto"); }
+    } else { $("tarjetaPasos").classList.add("oculto"); if (!(d.destino && d.destino.sinSitio)) $("tarjetaSitio").classList.remove("oculto"); }
 
     // Sitio
     $("txtSitio").textContent = L.sitio;
@@ -358,6 +392,20 @@
     $("antojo").textContent = L.antojo;
     $("lblReservar").textContent = L.reservar;
     $("lblReservar2").textContent = L.reservar2;
+
+    var D = d.destino;
+    if (D) {
+      if (D.marca === "volcano") {
+        document.body.classList.add("volcano");
+        $("marcaTop").innerHTML = '<img class="volcanoLogo" src="volcano-logo.png" alt="Volcano">';
+      }
+      var k = en ? "en" : "es";
+      $("antojo").textContent = D.antojo[k];
+      $("lblReservar").textContent = D.reservar[k][0];
+      $("lblReservar2").textContent = D.reservar[k][1];
+      if (D.sinSitio) $("tarjetaSitio").classList.add("oculto");
+      d.servicios = D.servicios(d.casa, en);
+    }
 
     reloj(L.locale);
     carrusel(d.servicios || SERVICIOS, en);
@@ -410,7 +458,9 @@
       });
       i = (i + 1) % escenas.length;
     }
-    mostrar(); clearInterval(carrusel._t); carrusel._t = setInterval(mostrar, SEGUNDOS_POR_SERVICIO * 1000);
+    mostrar(); clearInterval(carrusel._t);
+    if (escenas.length > 1) carrusel._t = setInterval(mostrar, SEGUNDOS_POR_SERVICIO * 1000);
+    barra.classList.toggle("oculto", escenas.length < 2);
   }
 
   function reloj(loc) {
