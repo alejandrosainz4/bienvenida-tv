@@ -26,7 +26,10 @@
     --vidrio: rgba(13, 39, 48, .55); --borde: rgba(255, 255, 255, .16);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--noche); }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  /* Nada se ve hasta tener los datos y la marca correcta: evita el destello del diseño equivocado al arrancar. */
+  #escenas, .velo, .capa { opacity: 0; transition: opacity .7s ease; }
+  body.listo #escenas, body.listo .velo, body.listo .capa { opacity: 1; }
   body { font-family: Inter, Roboto, "Helvetica Neue", Arial, sans-serif; color: #fff; font-size: 1vw;
          -webkit-font-smoothing: antialiased; }
 
@@ -316,6 +319,10 @@
       .catch(function () { var c = leer("servicios"); return c && c.length ? c : SERVICIOS; });
   }
 
+  // La última marca que dijo el sitio para esta tele: sirve si arranca sin internet.
+  function ultimoDestino() { try { return localStorage.getItem("destino:" + (q.get("codigo") || "")); } catch (e) { return null; } }
+  function recordarDestino(v) { try { localStorage.setItem("destino:" + (q.get("codigo") || ""), v); } catch (e) {} }
+
   function obtener(listo) {
     var base;
     var url = q.get("datos");
@@ -327,7 +334,8 @@
     Promise.all([base, huesped(q.get("codigo")), (q.get("demo") || DESTINOS[elegido]) ? Promise.resolve(SERVICIOS) : servicios()]).then(function (r) {
       var d = r[0], h = r[1];
       // El código de la casa también dice su destino (p. ej. Tupungato → Volcano), aunque la tele no lo tenga elegido.
-      var destino = DESTINOS[elegido] || (h && DESTINOS[h.destino]);
+      var destino = DESTINOS[elegido] || (h && DESTINOS[h.destino]) || DESTINOS[ultimoDestino()];
+      if (h && h.destino) recordarDestino(h.destino);
       if (h && h.nombre) {
         d.nombre = h.nombre; d.llegada = h.llegada; d.salida = h.salida;
         if (h.horaSalida) d.horaSalida = h.horaSalida;
@@ -478,7 +486,14 @@
     t(); clearInterval(reloj._i); reloj._i = setInterval(t, 15000);
   }
 
-  obtener(pintar);
+  obtener(function (d) {
+    pintar(d);
+    // Se muestra cuando la foto de fondo ya cargó (o a los 2 s, lo que pase primero).
+    var img = document.querySelector(".escena.activa img");
+    var mostrar = function () { document.body.classList.add("listo"); };
+    if (img && !img.complete) { img.addEventListener("load", mostrar); img.addEventListener("error", mostrar); setTimeout(mostrar, 2000); }
+    else mostrar();
+  });
 })();
 </script>
 </body>
