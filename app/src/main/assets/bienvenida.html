@@ -26,7 +26,23 @@
     --vidrio: rgba(13, 39, 48, .55); --borde: rgba(255, 255, 255, .16);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1B264F; }
+
+  /* ---------- Pantalla de carga: amanecer con un sol que late ---------- */
+  .carga { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center;
+           background: linear-gradient(180deg, #1B264F 0%, #6B3F6E 30%, #E86A60 58%, #F7B848 100%);
+           transition: opacity .9s ease; }
+  body.listo .carga { opacity: 0; pointer-events: none; }
+  .carga .sol { width: 9vw; height: 9vw; border-radius: 50%; background: #FFE28C;
+                box-shadow: 0 0 4vw 1.5vw rgba(255,214,120,.55), 0 0 10vw 4vw rgba(255,190,90,.25);
+                animation: latir 2.4s ease-in-out infinite; }
+  @keyframes latir { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  .carga h1 { margin-top: 3.2vw; font-size: 4.2vw; font-weight: 700; color: #fff; letter-spacing: -.02em;
+              text-shadow: 0 .2vw 1.2vw rgba(90,30,30,.35); }
+  .carga .puntos3 { margin-top: 1.4vw; display: flex; gap: .8vw; }
+  .carga .puntos3 i { width: .8vw; height: .8vw; border-radius: 50%; background: rgba(255,255,255,.85); animation: punto 1.4s infinite ease-in-out; }
+  .carga .puntos3 i:nth-child(2) { animation-delay: .2s; } .carga .puntos3 i:nth-child(3) { animation-delay: .4s; }
+  @keyframes punto { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-.4vw); } }
   /* Nada se ve hasta tener los datos y la marca correcta: evita el destello del diseño equivocado al arrancar. */
   #escenas, .velo, .capa { opacity: 0; transition: opacity .7s ease; }
   body.listo #escenas, body.listo .velo, body.listo .capa { opacity: 1; }
@@ -134,6 +150,7 @@
 </style>
 </head>
 <body>
+<div class="carga" id="carga"><div class="sol"></div><h1 id="cargaTexto">¡Bienvenidos!</h1><div class="puntos3"><i></i><i></i><i></i></div></div>
 <div id="escenas"></div>
 <div class="velo"></div>
 
@@ -186,6 +203,7 @@
 
 <script>
 (function () {
+  var INICIO = Date.now();
   var SITIO = "https://alexaventuras.com";
 
   // ---------- Textos ----------
@@ -267,6 +285,7 @@
   };
 
   var q = new URLSearchParams(location.search);
+  if (q.get("idioma") === "en") document.getElementById("cargaTexto").textContent = "Welcome!";
   function hoyMas(d) { var x = new Date(); x.setDate(x.getDate() + d); return iso(x); }
   function iso(x) { return x.getFullYear() + "-" + pad(x.getMonth() + 1) + "-" + pad(x.getDate()); }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
@@ -490,7 +509,8 @@
     pintar(d);
     // Se muestra cuando la foto de fondo ya cargó (o a los 2 s, lo que pase primero).
     var img = document.querySelector(".escena.activa img");
-    var mostrar = function () { document.body.classList.add("listo"); };
+    var falta = Math.max(0, 1200 - (Date.now() - INICIO));   // que la carga no parpadee: al menos 1.2 s
+    var mostrar = function () { setTimeout(function () { document.body.classList.add("listo"); }, falta); };
     if (img && !img.complete) { img.addEventListener("load", mostrar); img.addEventListener("error", mostrar); setTimeout(mostrar, 2000); }
     else mostrar();
   });

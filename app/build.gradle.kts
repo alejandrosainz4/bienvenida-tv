@@ -11,8 +11,8 @@ android {
         applicationId = "com.alexaventuras.bienvenida"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.4"
+        versionCode = 6
+        versionName = "1.5"
     }
 
     // Siempre la misma firma: así cada versión nueva se instala encima de la anterior y la tele conserva su

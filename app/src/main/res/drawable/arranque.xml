@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo de arranque: el mismo amanecer de la pantalla de carga, para que no haya saltos de color. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="270" android:startColor="#1B264F" android:centerColor="#E86A60" android:endColor="#F7B848" />
+</shape>

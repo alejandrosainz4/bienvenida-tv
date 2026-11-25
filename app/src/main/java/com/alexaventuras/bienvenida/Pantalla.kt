@@ -33,7 +33,7 @@ class Pantalla(context: Context) : WebView(context) {
     }
 
     init {
-        setBackgroundColor(Color.BLACK)
+        setBackgroundColor(Color.TRANSPARENT)  // deja ver el amanecer de arranque
         isFocusable = false
         isFocusableInTouchMode = false
         overScrollMode = View.OVER_SCROLL_NEVER
